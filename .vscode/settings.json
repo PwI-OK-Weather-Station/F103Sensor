@@ -1,0 +1,22 @@
+{
+    "C_Cpp.intelliSenseEngine": "Disabled",
+    "cortex-debug.registerUseNaturalFormat": false,
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "clangd.path": "/usr/bin/clangd-12",
+    "clangd.arguments": [
+        "-log=verbose",
+        "-compile-commands-dir=${workspaceRoot}/build",
+        "--clang-tidy",
+        "-j=7",
+        "--pretty", 
+        "--query-driver=/usr/local/bin/arm-none-eabi-g++",
+        "-header-insertion=iwyu",
+        "--pch-storage=memory",
+        "--all-scopes-completion",
+        "--completion-style=detailed",
+        "--background-index",
+        "--enable-config"
+    ],
+    "cortex-debug.openocdPath": "/usr/bin/openocd",
+    "cmake.configureOnOpen": true
+}

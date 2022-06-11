@@ -1,0 +1,29 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "build/${workspaceFolderBasename}.elf",
+            "name": "Build and debug",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "interface": "swd",
+            "device": "STM32F103RB",
+            "preLaunchTask": "CMake: build", 
+            // Dla bogaczy polecam wykorzystywać natywną
+            // konfiguracje dla nucleo zamiast samego układu z rodziny f1x
+            // Normalnie "target/stm32f1x.cfg"
+            "configFiles": ["interface/stlink-v2-1.cfg", "target/stm32f1x.cfg"],
+            "svdFile": "./STM32F103xx.svd",
+            // "runToEntryPoint": "main",
+            // OpenOCD wersja 0.10 only
+            //"overrideGDBServerStartedRegex": "Info\\s:\\s([^\\n\\.]*)\\.cpu([^\\n]*)",
+            // "runToEntryPoint": "main",
+            "showDevDebugOutput": "both"
+        }
+	]
+}
