@@ -29,13 +29,13 @@ void Pin::setModeOutput(){
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 	GPIO_InitStruct.Pin = GPIO_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 	HAL_GPIO_Init(GPIO_Port, &GPIO_InitStruct);
 
 }
 
-bool Pin::readPin(){
-    return (1 & HAL_GPIO_ReadPin(GPIO_Port, GPIO_Pin));
+GPIO_PinState Pin::readPin(){
+    return HAL_GPIO_ReadPin(GPIO_Port, GPIO_Pin);
 }
 
 void Pin::writePin(bool state){

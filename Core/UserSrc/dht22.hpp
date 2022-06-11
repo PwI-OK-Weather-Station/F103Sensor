@@ -1,19 +1,24 @@
 #pragma once
+#include "pin.hpp"
+#include "stm32f103xb.h"
 
-#include "util.hpp"
-
-#define DHT22_Pin GPIO_PIN_1
-#define DHT22_GPIO_Port GPIOA
-
-typedef struct
-{
-	float Temperature;
-	float Humidity;
-} DHT22_DataTypedef;
 
 class DHT22{
+    public:
+    /**
+     * @brief Konstruktor obiektu DHT22
+     * 
+     */
+    DHT22(GPIO_TypeDef* GPIO_Port, uint16_t GPIO_Pin): pin(Pin(GPIO_Port,GPIO_Pin)){};
+    void read();
+    float getTemp();
+    float getHumid();
+
     private:
-    uint16_t pin = DHT22_Pin;
-    GPIO_TypeDef* port = DHT22_GPIO_Port;
-    int temp;
+    void init();
+    bool checkResponse();
+    uint8_t readByte();
+    float temperature = 0;
+    float humidity = 0;
+    Pin pin;
 };

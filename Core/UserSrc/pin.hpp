@@ -42,7 +42,7 @@ class Pin{
          * @return true Stan wysoki na pinie
          * @return false Stan niski na pinie
          */
-        bool readPin();
+        GPIO_PinState readPin();
 
         /**
          * @brief Wpisuje stan na określony pin

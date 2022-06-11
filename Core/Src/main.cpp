@@ -21,11 +21,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <cstdio>
+#include "stdio.h"
+#include "string.h"
 #include <stdbool.h>
 #include "../UserSrc/pin.hpp"
 #include "../UserSrc/util.hpp"
+#include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_gpio.h"
+#include "../UserSrc/dht22.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,6 +46,10 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ ADC_HandleTypeDef hadc1;
+
+SPI_HandleTypeDef hspi2;
+
 TIM_HandleTypeDef htim1;
 
 UART_HandleTypeDef huart2;
@@ -56,17 +63,22 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int __io_putchar(int ch)
-{
-  HAL_UART_Transmit(&huart2, (uint8_t*)&ch, 1, 1000);
-  return ch;
+extern "C"{
+
+  int __io_putchar(int ch) {
+      HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xffff);
+      return ch;
+  } 
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -99,8 +111,12 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
+  MX_ADC1_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim1);
+  HAL_ADC_Start(&hadc1);
+  HAL_UART_Init(&huart2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,14 +124,32 @@ int main(void)
   auto button = Pin(GPIOB, GPIO_PIN_5);
   button.setMode(Pin::PinMode::Input);
   int state = 0;
+  uint16_t light = 0;
+  auto time = HAL_GetTick();
+  auto time2 = HAL_GetTick();
+  auto tekst = "test\n";
+  DHT22 dht = DHT22(GPIOA, GPIO_PIN_1);
+  uint8_t x = 65;
   while (true) {
+    if(HAL_GetTick() - time > 1000){
+      if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+        light = HAL_ADC_GetValue(&hadc1);
+        HAL_ADC_Start(&hadc1);
+        printf("Swiatlo: %d\r\n", light);
 
+	    }
+      if(time2 + 2000 < HAL_GetTick()){
+        dht.read();
+        printf("Temperatura: %.1f, wilgotnosc: %.1f%% \r\n", dht.getTemp(), dht.getHumid());
+        time2+=2000;
+      }
+      time+=1000;
+    }
     HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, (button.readPin()?GPIO_PIN_SET:GPIO_PIN_RESET));
   }
-  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-
-  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 
   /* USER CODE END 3 */
 }
@@ -128,6 +162,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -156,6 +191,97 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief SPI2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI2_Init(void)
+{
+
+  /* USER CODE BEGIN SPI2_Init 0 */
+
+  /* USER CODE END SPI2_Init 0 */
+
+  /* USER CODE BEGIN SPI2_Init 1 */
+
+  /* USER CODE END SPI2_Init 1 */
+  /* SPI2 parameter configuration*/
+  hspi2.Instance = SPI2;
+  hspi2.Init.Mode = SPI_MODE_MASTER;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi2.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI2_Init 2 */
+
+  /* USER CODE END SPI2_Init 2 */
+
 }
 
 /**
