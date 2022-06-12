@@ -29,6 +29,7 @@
 #include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "../UserSrc/dht22.hpp"
+#include "../UserSrc/bmp280.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -121,29 +122,37 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  auto button = Pin(GPIOB, GPIO_PIN_5);
+  auto button = Pin(GPIOC, GPIO_PIN_13);
   button.setMode(Pin::PinMode::Input);
-  int state = 0;
   uint16_t light = 0;
+
   auto time = HAL_GetTick();
-  auto time2 = HAL_GetTick();
+  auto pollTime =HAL_GetTick();
+
   auto tekst = "test\n";
   DHT22 dht = DHT22(GPIOA, GPIO_PIN_1);
-  uint8_t x = 65;
+  BMP280 bmp = BMP280(&hspi2, GPIOC, GPIO_PIN_10);
+  bmp.initialize();
+  
+  auto state = button.getPinState();
   while (true) {
-    if(HAL_GetTick() - time > 1000){
+    if(pollTime+10 < HAL_GetTick()){
+      pollTime = HAL_GetTick();
+      state = button.getPinState();
+    } 
+    if((HAL_GetTick() - time > 60000) || (state == Pin::PinState::Pressed)){
       if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
         light = HAL_ADC_GetValue(&hadc1);
         HAL_ADC_Start(&hadc1);
-        printf("Swiatlo: %d\r\n", light);
-
-	    }
-      if(time2 + 2000 < HAL_GetTick()){
-        dht.read();
-        printf("Temperatura: %.1f, wilgotnosc: %.1f%% \r\n", dht.getTemp(), dht.getHumid());
-        time2+=2000;
       }
-      time+=1000;
+      dht.read();
+      bmp.measure();
+      printf("{\"light\": %d, \"temp\": %.1f, \"humidity\": %.1f, \"pressure\": %.1f}\r\n",
+              light, dht.getTemp(), dht.getHumid(), bmp.getPressure());
+
+      time = HAL_GetTick();
+      HAL_Delay(4000);
+      button.setState(Pin::PinState::StillPressed);
     }
     HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, (button.readPin()?GPIO_PIN_SET:GPIO_PIN_RESET));
   }
