@@ -21,7 +21,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "../Inc/credentials.h"
 #include "stdio.h"
 #include "string.h"
 #include <stdbool.h>
@@ -141,8 +140,8 @@ int main(void)
     if((HAL_GetTick() - time > 60000) || (state == Pin::PinState::Pressed)){  
       dht.read();
       bmp.measure();
-      printf("{\"device_token\": \"%s\", \"temperature\": %.1f, \"humidity\": %.1f, \"pressure\": %.1f}\r\n",
-              TOKEN, dht.getTemp(), dht.getHumid(), bmp.getPressure());
+      printf("{\"temperature\": %.1f, \"humidity\": %.1f, \"pressure\": %.1f}\r\n",
+             dht.getTemp(), dht.getHumid(), bmp.getPressure());
 
       time = HAL_GetTick();
       HAL_Delay(4000);
