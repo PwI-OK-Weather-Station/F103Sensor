@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "../Inc/credentials.h"
 #include "stdio.h"
 #include "string.h"
 #include <stdbool.h>
@@ -116,7 +117,6 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim1);
-  HAL_ADC_Start(&hadc1);
   HAL_UART_Init(&huart2);
   /* USER CODE END 2 */
 
@@ -124,8 +124,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   auto button = Pin(GPIOC, GPIO_PIN_13);
   button.setMode(Pin::PinMode::Input);
-  uint16_t light = 0;
-
+  
   auto time = HAL_GetTick();
   auto pollTime =HAL_GetTick();
 
@@ -133,22 +132,17 @@ int main(void)
   DHT22 dht = DHT22(GPIOA, GPIO_PIN_1);
   BMP280 bmp = BMP280(&hspi2, GPIOC, GPIO_PIN_10);
   bmp.initialize();
-  
   auto state = button.getPinState();
   while (true) {
     if(pollTime+10 < HAL_GetTick()){
       pollTime = HAL_GetTick();
       state = button.getPinState();
     } 
-    if((HAL_GetTick() - time > 60000) || (state == Pin::PinState::Pressed)){
-      if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-        light = HAL_ADC_GetValue(&hadc1);
-        HAL_ADC_Start(&hadc1);
-      }
+    if((HAL_GetTick() - time > 60000) || (state == Pin::PinState::Pressed)){  
       dht.read();
       bmp.measure();
-      printf("{\"light\": %d, \"temp\": %.1f, \"humidity\": %.1f, \"pressure\": %.1f}\r\n",
-              light, dht.getTemp(), dht.getHumid(), bmp.getPressure());
+      printf("{\"device_token\": \"%s\", \"temperature\": %.1f, \"humidity\": %.1f, \"pressure\": %.1f}\r\n",
+              TOKEN, dht.getTemp(), dht.getHumid(), bmp.getPressure());
 
       time = HAL_GetTick();
       HAL_Delay(4000);
